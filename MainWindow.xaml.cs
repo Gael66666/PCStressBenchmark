@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using System.IO;
 using System.Management;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Windows.Threading;
+using Microsoft.Win32;
 
 namespace PCStressBenchmarkGUI;
 
@@ -18,6 +22,21 @@ public partial class MainWindow : Window
     private bool _isRunning = false;
     private bool _intenseMode = false;
     private double _detectedRamGb = 0;
+    private string _detectedCpuName = "Inconnu";
+
+    // GPU
+    private long _gpuFrameCount = 0;
+    private readonly List<ModelVisual3D> _gpuCubes = new();
+    private bool _gpuAnimating = false;
+
+    // Température (pas de "volatile" possible sur un double ; un seul thread
+    // écrit et un seul lit, donc une désynchronisation momentanée est sans risque ici)
+    private volatile bool _tempMonitoring = false;
+    private double _currentTempC = -1; // -1 = indisponible
+
+    // Dernier résultat (pour copier/exporter)
+    private string _lastResultText = "";
+    private double _lastScore = 0;
 
     public MainWindow()
     {
@@ -27,7 +46,70 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        SetupGpuScene();
         await ScanHardwareAsync();
+    }
+
+    // Construit 3 cubes colorés dans le Viewport3D, utilisés comme charge GPU
+    private void SetupGpuScene()
+    {
+        var colors = new[] { Colors.MediumPurple, Colors.DodgerBlue, Colors.MediumSeaGreen };
+        double[] positions = { -1.6, 0, 1.6 };
+
+        for (int i = 0; i < 3; i++)
+        {
+            var cube = BuildCube(colors[i]);
+            var transformGroup = new Transform3DGroup();
+            transformGroup.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(1, 1, 0), 0)));
+            transformGroup.Children.Add(new TranslateTransform3D(positions[i], 0, 0));
+            cube.Transform = transformGroup;
+
+            var visual = new ModelVisual3D { Content = cube };
+            _gpuCubes.Add(visual);
+            GpuViewport.Children.Add(visual);
+        }
+    }
+
+    private GeometryModel3D BuildCube(Color color)
+    {
+        var mesh = new MeshGeometry3D();
+        Point3D[] p =
+        {
+            new(-0.5,-0.5,-0.5), new(0.5,-0.5,-0.5), new(0.5,0.5,-0.5), new(-0.5,0.5,-0.5),
+            new(-0.5,-0.5,0.5),  new(0.5,-0.5,0.5),  new(0.5,0.5,0.5),  new(-0.5,0.5,0.5)
+        };
+        foreach (var pt in p) mesh.Positions.Add(pt);
+
+        int[] tris =
+        {
+            0,1,2, 0,2,3, // arrière
+            4,6,5, 4,7,6, // avant
+            0,4,5, 0,5,1, // bas
+            2,6,7, 2,7,3, // haut
+            0,3,7, 0,7,4, // gauche
+            1,5,6, 1,6,2  // droite
+        };
+        foreach (var idx in tris) mesh.TriangleIndices.Add(idx);
+
+        var material = new DiffuseMaterial(new SolidColorBrush(color));
+        return new GeometryModel3D(mesh, material);
+    }
+
+    // Appelé à chaque image pendant le test : fait tourner les cubes et compte les FPS
+    private void CompositionTarget_Rendering(object? sender, EventArgs e)
+    {
+        if (!_gpuAnimating) return;
+
+        double angle = _stopwatch.Elapsed.TotalSeconds * 90; // degrés/seconde
+        foreach (var visual in _gpuCubes)
+        {
+            if (visual.Content is GeometryModel3D model && model.Transform is Transform3DGroup group
+                && group.Children[0] is RotateTransform3D rot && rot.Rotation is AxisAngleRotation3D axis)
+            {
+                axis.Angle = angle;
+            }
+        }
+        Interlocked.Increment(ref _gpuFrameCount);
     }
 
     // Interroge WMI pour récupérer CPU / RAM / GPU. Peut prendre 1-2 secondes,
@@ -88,6 +170,40 @@ public partial class MainWindow : Window
         TxtGpuName.Text = $"Carte graphique : {result.gpuNames}";
         TxtScanStatus.Text = "Détecté";
         _detectedRamGb = result.ramGb;
+        _detectedCpuName = result.cpuName;
+    }
+
+    // Lecture de la température CPU via WMI (root\WMI, MSAcpi_ThermalZoneTemperature).
+    // Cette source n'est pas disponible sur toutes les machines (dépend du BIOS/pilotes) :
+    // en cas d'échec on affiche simplement "N/A" plutôt que de faire planter le test.
+    private void TemperatureMonitorLoop()
+    {
+        while (_tempMonitoring)
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher("root\\WMI", "SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature");
+                double? best = null;
+                foreach (var obj in searcher.Get())
+                {
+                    if (double.TryParse(obj["CurrentTemperature"]?.ToString(), out double raw))
+                    {
+                        double celsius = (raw / 10.0) - 273.15;
+                        if (celsius is > -50 and < 150) // filtre les valeurs aberrantes
+                        {
+                            best = best is null ? celsius : Math.Max(best.Value, celsius);
+                        }
+                    }
+                }
+                _currentTempC = best ?? -1;
+            }
+            catch
+            {
+                _currentTempC = -1;
+            }
+
+            Thread.Sleep(1000);
+        }
     }
 
     private void RadioMode_Checked(object sender, RoutedEventArgs e)
@@ -121,6 +237,8 @@ public partial class MainWindow : Window
         _isRunning = true;
         _cpuOperations = 0;
         _ramBytesProcessed = 0;
+        _gpuFrameCount = 0;
+        _currentTempC = -1;
 
         ScorePanel.Visibility = Visibility.Collapsed;
         BtnStart.IsEnabled = false;
@@ -141,16 +259,11 @@ public partial class MainWindow : Window
         }
         TxtStatus.Text = "Test en cours";
 
-        // En mode Intense : priorité process un peu plus haute, mais jamais
-        // "High"/"Realtime" — cette combinaison a déjà provoqué un gel total
-        // de la machine lors des tests précédents, donc on l'évite volontairement.
-        try
-        {
-            Process.GetCurrentProcess().PriorityClass = _intenseMode
-                ? ProcessPriorityClass.AboveNormal
-                : ProcessPriorityClass.Normal;
-        }
-        catch { /* ignorer si refusé par l'OS */ }
+        // En mode Intense comme en mode Calme, on NE touche PAS à la priorité
+        // du processus (garder "Normal") : c'est justement une élévation de
+        // priorité qui avait causé un gel complet de la machine lors d'un test
+        // précédent. La charge reste très forte simplement grâce au nombre de
+        // threads de calcul, sans jouer sur les priorités système du processus.
 
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
@@ -161,13 +274,19 @@ public partial class MainWindow : Window
         // Mode Intense : un thread CPU supplémentaire par cœur (sursouscription
         // volontaire) pour multiplier les changements de contexte et vraiment
         // faire ramer la machine, sans toucher aux priorités système extrêmes.
+        //
+        // Priorité BelowNormal (au lieu de Normal) : ça reste suffisant pour
+        // saturer les cœurs dès qu'ils sont libres, mais ça garantit que le
+        // thread d'interface (priorité Normal) passe TOUJOURS en premier dès
+        // qu'on clique sur Arrêter — sinon, à charge égale, Windows peut mettre
+        // plusieurs secondes à traiter le clic quand tous les cœurs sont occupés.
         int cpuThreadCount = _intenseMode ? coreCount * 2 : coreCount;
         for (int i = 0; i < cpuThreadCount; i++)
         {
             var t = new Thread(() => CpuStressWorker(token))
             {
                 IsBackground = true,
-                Priority = ThreadPriority.Normal
+                Priority = ThreadPriority.BelowNormal
             };
             threads.Add(t);
         }
@@ -181,12 +300,21 @@ public partial class MainWindow : Window
             var rt = new Thread(() => RamStressWorker(token, ramBlockMb))
             {
                 IsBackground = true,
-                Priority = ThreadPriority.Normal
+                Priority = ThreadPriority.BelowNormal
             };
             threads.Add(rt);
         }
 
         foreach (var t in threads) t.Start();
+
+        // Démarrage de l'animation GPU (rendu continu tant que le test tourne)
+        _gpuAnimating = true;
+        CompositionTarget.Rendering += CompositionTarget_Rendering;
+
+        // Démarrage du suivi température sur un thread dédié
+        _tempMonitoring = true;
+        var tempThread = new Thread(TemperatureMonitorLoop) { IsBackground = true };
+        tempThread.Start();
 
         _uiTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
         _uiTimer.Tick += UiTimer_Tick;
@@ -201,6 +329,9 @@ public partial class MainWindow : Window
         _cts.Cancel();
         _stopwatch.Stop();
         _uiTimer.Stop();
+        _gpuAnimating = false;
+        CompositionTarget.Rendering -= CompositionTarget_Rendering;
+        _tempMonitoring = false;
 
         // Attendre l'arrêt propre des threads (hors thread UI)
         await Task.Run(() =>
@@ -248,10 +379,13 @@ public partial class MainWindow : Window
 
         double cpuOpsPerSecond = elapsed > 0 ? _cpuOperations / elapsed : 0;
         double ramMbPerSecond = elapsed > 0 ? (_ramBytesProcessed / (1024.0 * 1024.0)) / elapsed : 0;
+        double gpuFps = elapsed > 0 ? _gpuFrameCount / elapsed : 0;
 
         TxtElapsed.Text = $"{elapsed:F1} s";
         TxtCpuRate.Text = $"{cpuOpsPerSecond:N0} ops/s";
         TxtRamRate.Text = $"{ramMbPerSecond:F0} Mo/s";
+        TxtGpuRate.Text = $"{gpuFps:F0} fps";
+        TxtTemp.Text = _currentTempC > 0 ? $"{_currentTempC:F0} °C" : "N/A";
         TxtPercent.Text = $"{percent:F0}%";
 
         double trackWidth = ((Border)ProgressFill.Parent).ActualWidth;
@@ -271,7 +405,10 @@ public partial class MainWindow : Window
         double ramMbPerSecond = (_ramBytesProcessed / (1024.0 * 1024.0)) / elapsedSeconds;
         double ramScore = ramMbPerSecond * 2.0;
 
-        double totalScore = (cpuScore * coreCount) + ramScore;
+        double gpuFps = _gpuFrameCount / elapsedSeconds;
+        double gpuScore = gpuFps * 15.0; // pondération arbitraire
+
+        double totalScore = (cpuScore * coreCount) + ramScore + gpuScore;
 
         string tier;
         Color tierColor;
@@ -294,6 +431,29 @@ public partial class MainWindow : Window
         TierBadge.Background = new SolidColorBrush(tierColor);
         TxtVerdict.Text = BuildVerdict(totalScore);
         ScorePanel.Visibility = Visibility.Visible;
+
+        _lastScore = totalScore;
+        _lastResultText =
+            $"PC Stress Benchmark — {DateTime.Now:dd/MM/yyyy HH:mm}\n" +
+            $"Processeur : {_detectedCpuName}\n" +
+            $"Mémoire : {_detectedRamGb:F1} Go\n" +
+            $"Mode : {(_intenseMode ? "Intense" : "Calme")} · Durée : {_durationSeconds}s\n" +
+            $"Score final : {totalScore:N0} points ({tier})\n" +
+            $"CPU : {cpuOpsPerSecondPerCore:N0} ops/s/cœur · RAM : {ramMbPerSecond:F0} Mo/s · GPU : {gpuFps:F0} fps";
+
+        HistoryStore.Add(new BenchmarkRecord
+        {
+            Date = DateTime.Now,
+            Mode = _intenseMode ? "Intense" : "Calme",
+            DurationSeconds = _durationSeconds,
+            Score = totalScore,
+            Tier = tier,
+            CpuName = _detectedCpuName,
+            RamGb = _detectedRamGb,
+            CpuOpsPerSecondPerCore = cpuOpsPerSecondPerCore,
+            RamMbPerSecond = ramMbPerSecond,
+            GpuFps = gpuFps
+        });
     }
 
     // Traduit le score (et la RAM détectée) en avis pratique sur les usages
@@ -318,6 +478,65 @@ public partial class MainWindow : Window
         };
 
         return usage + ramNote;
+    }
+
+    private void BtnHistory_Click(object sender, RoutedEventArgs e)
+    {
+        var window = new HistoryWindow { Owner = this };
+        window.Show();
+    }
+
+    private void BtnCopy_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_lastResultText)) return;
+        try
+        {
+            Clipboard.SetText(_lastResultText);
+            BtnCopy.Content = "✅ Copié !";
+            var resetTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            resetTimer.Tick += (_, _) =>
+            {
+                BtnCopy.Content = "📋 Copier le résultat";
+                resetTimer.Stop();
+            };
+            resetTimer.Start();
+        }
+        catch
+        {
+            MessageBox.Show("Impossible de copier dans le presse-papier.", "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void BtnExport_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var size = new Size(ScorePanel.ActualWidth, ScorePanel.ActualHeight);
+            if (size.Width <= 0 || size.Height <= 0) return;
+
+            var bitmap = new RenderTargetBitmap(
+                (int)size.Width, (int)size.Height, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(ScorePanel);
+
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Image PNG (*.png)|*.png",
+                FileName = $"PCStressBenchmark_{DateTime.Now:yyyyMMdd_HHmmss}.png"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                using var stream = File.Create(dialog.FileName);
+                encoder.Save(stream);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Impossible d'enregistrer la capture : {ex.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     // Charge CPU : calculs flottants intensifs
@@ -364,6 +583,7 @@ public partial class MainWindow : Window
             for (long i = 0; i < blockSize; i += stride)
             {
                 block[i] = counter;
+                if ((i & 0xFFFFFF) == 0 && token.IsCancellationRequested) break; // vérif périodique
             }
             counter++;
 
@@ -371,6 +591,7 @@ public partial class MainWindow : Window
             for (long i = 0; i < blockSize; i += stride)
             {
                 checksum += block[i];
+                if ((i & 0xFFFFFF) == 0 && token.IsCancellationRequested) break; // vérif périodique
             }
             if (checksum < 0) { /* no-op anti-optimisation */ }
 

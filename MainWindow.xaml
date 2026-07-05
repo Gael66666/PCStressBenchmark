@@ -72,10 +72,26 @@
         </Grid.RowDefinitions>
 
         <!-- En-tête -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="PC Stress Benchmark" FontSize="26" FontWeight="Bold" Foreground="White"/>
-            <TextBlock Text="Test de charge CPU &amp; RAM avec score de performance" FontSize="13" Foreground="#8A8A94" Margin="0,4,0,0"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="PC Stress Benchmark" FontSize="26" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Test de charge CPU, RAM &amp; GPU avec score de performance" FontSize="13" Foreground="#8A8A94" Margin="0,4,0,0"/>
+            </StackPanel>
+            <Button x:Name="BtnHistory" Grid.Column="1" Content="Historique" Click="BtnHistory_Click"
+                    Background="#22242F" Foreground="#C8C8D4" FontSize="12" Padding="12,8" BorderThickness="0" Cursor="Hand" VerticalAlignment="Top">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
 
         <!-- Configuration matérielle détectée -->
         <Border Grid.Row="1" Background="#1A1C25" CornerRadius="12" Padding="16" Margin="0,0,0,16">
@@ -148,6 +164,8 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
@@ -158,14 +176,39 @@
                     <TextBlock Text="TEMPS ÉCOULÉ" Style="{StaticResource StatLabel}"/>
                     <TextBlock x:Name="TxtElapsed" Text="0.0 s" Style="{StaticResource StatValue}"/>
                 </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="0">
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
                     <TextBlock Text="DÉBIT CPU" Style="{StaticResource StatLabel}"/>
                     <TextBlock x:Name="TxtCpuRate" Text="0 ops/s" Style="{StaticResource StatValue}" FontSize="16"/>
                 </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="1">
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,14">
                     <TextBlock Text="DÉBIT RAM" Style="{StaticResource StatLabel}"/>
                     <TextBlock x:Name="TxtRamRate" Text="0 Mo/s" Style="{StaticResource StatValue}" FontSize="16"/>
                 </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="0">
+                    <TextBlock Text="GPU (IMAGES/S)" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtGpuRate" Text="0 fps" Style="{StaticResource StatValue}" FontSize="16"/>
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="1">
+                    <TextBlock Text="TEMPÉRATURE CPU" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtTemp" Text="N/A" Style="{StaticResource StatValue}" FontSize="16"/>
+                </StackPanel>
+
+                <!-- Aperçu visuel du test GPU (rendu 3D continu pendant le test) -->
+                <Border Grid.Row="3" Grid.ColumnSpan="2" Background="#0F1117" CornerRadius="8" Margin="0,14,0,0" Height="90">
+                    <Viewport3D x:Name="GpuViewport">
+                        <Viewport3D.Camera>
+                            <PerspectiveCamera Position="0,0,5" LookDirection="0,0,-1" UpDirection="0,1,0" FieldOfView="60"/>
+                        </Viewport3D.Camera>
+                        <ModelVisual3D>
+                            <ModelVisual3D.Content>
+                                <Model3DGroup>
+                                    <AmbientLight Color="#666666"/>
+                                    <DirectionalLight Color="#FFFFFF" Direction="-1,-1,-2"/>
+                                </Model3DGroup>
+                            </ModelVisual3D.Content>
+                        </ModelVisual3D>
+                    </Viewport3D>
+                </Border>
             </Grid>
         </Border>
 
@@ -197,6 +240,29 @@
                     <TextBlock x:Name="TxtTier" Text="—" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
                 </Border>
                 <TextBlock x:Name="TxtVerdict" Text="" Foreground="#C8C8D4" FontSize="13" Margin="0,16,0,0" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="380"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,18,0,0" HorizontalAlignment="Center">
+                    <Button x:Name="BtnCopy" Content="📋 Copier le résultat" Click="BtnCopy_Click" Margin="0,0,8,0"
+                            Background="#2A2C38" Foreground="White" FontSize="12" Padding="12,8" BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="BtnExport" Content="🖼 Enregistrer capture" Click="BtnExport_Click"
+                            Background="#2A2C38" Foreground="White" FontSize="12" Padding="12,8" BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>
