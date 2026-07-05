@@ -1,84 +1,68 @@
-\# PC Stress Benchmark
+<div align="center">
 
+# ⚡ PC Stress Benchmark ⚡
+**L'outil ultime pour tester la puissance et la stabilité de ton PC**
 
+![.NET 8](https://img.shields.io/badge/.NET%208.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![WPF](https://img.shields.io/badge/WPF-Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white)
+![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)
+![Platform](https://img.shields.io/badge/Plateforme-Windows%20x64-blue?style=for-the-badge)
 
-Un outil de benchmark et de test de charge matériel moderne développé en \*\*.NET 8.0\*\* et \*\*WPF\*\*\[cite: 7]. Il permet de tester la stabilité et les performances du processeur (CPU), de la mémoire vive (RAM) et de la carte graphique (GPU) tout en surveillant la température\[cite: 1, 6].
+*Un benchmark complet, fluide et moderne développé en C# pour pousser le CPU, la RAM et le GPU dans leurs derniers retranchements.*
 
+---
 
+</div>
 
-\---
+## 📌 À propos du projet
 
+**PC Stress Benchmark** est une application lourde conçue avec **WPF** et **.NET 8.0**[cite: 7]. Elle permet d'évaluer les performances réelles d'un ordinateur en appliquant une charge calculée sur les composants clés, tout en surveillant les métriques système en direct (température, débits, FPS).
 
+> 💡 **Pourquoi l'utiliser ?**  
+> Idéal pour vérifier la stabilité d'un PC après un overclocking, tester l'efficacité d'un refroidissement, ou simplement comparer les performances de ta machine avec tes potes ![cite: 1]
 
-\## 🚀 Fonctionnalités
+---
 
+## 🔥 Fonctionnalités Principales
 
+| Composant | Méthode de Test | Métrique en direct |
+| :--- | :--- | :--- |
+| 🧠 **Processeur (CPU)** | Calculs flottants intensifs & trigonométrie sur tous les cœurs logiques[cite: 1] | `Opérations / seconde`[cite: 1] |
+| 💾 **Mémoire (RAM)** | Allocation de blocs lourds avec stress du bus mémoire en lecture/écriture[cite: 1] | `Débit en Mo/s`[cite: 1] |
+| 🎮 **Graphismes (GPU)** | Rendu 3D continu et animations géométriques en temps réel (*Viewport3D*)[cite: 1, 6] | `Images / seconde (FPS)`[cite: 1] |
+| 🌡️ **Moniteur WMI** | Capteur de température intégré via les sondes ACPI de la carte mère[cite: 1] | `Température en °C`[cite: 1] |
 
-\* \*\*Analyse Matérielle Automatique :\*\* Détection automatique du modèle de processeur, de la quantité de mémoire RAM et des cartes graphiques via des requêtes WMI\[cite: 1].
+---
 
-\* \*\*Stress Test Multi-Thread :\*\* 
+## ⚙️ Les Modes d'Intensité
 
-&#x20; \* \*\*CPU :\*\* Calculs de fonctions trigonométriques et de racines carrées intensifs répartis sur tous les cœurs logiques\[cite: 1].
+L'application propose deux modes de test adaptés à ta configuration[cite: 1, 6] :
 
-&#x20; \* \*\*RAM :\*\* Allocation d'un bloc de mémoire statique persistant avec lecture/écriture espacée pour maximiser le trafic sur le bus mémoire tout en évitant de surcharger le Garbage Collector\[cite: 1].
+* 🟢 **Mode Calme :** Charge standard pour un test de stabilité rapide (15s à 120s) sans bloquer le reste de ton système[cite: 1, 6].
+* 🔴 **Mode Intense :** **Sursouscription des threads** (2x plus de threads que de cœurs physiques) et blocs RAM massifs[cite: 1]. *Attention : Conçu pour faire transpirer les PC puissants !*[cite: 1, 6]
 
-&#x20; \* \*\*GPU :\*\* Rendu 3D continu de formes géométriques animées via un `Viewport3D` WPF pour mesurer le taux de rafraîchissement (FPS) sous charge\[cite: 1, 6].
+---
 
-\* \*\*Deux Modes d'Intensité :\*\*
+## 🏆 Système de Score & Rangs
 
-&#x20; \* \*\*Mode Calme :\*\* Charge standard pour un test de stabilité rapide\[cite: 1, 6].
+À la fin de chaque benchmark, un **score global pondéré** est généré, accompagné d'un badge de performance et d'un verdict sur les capacités de la machine[cite: 1, 6] :
 
-&#x20; \* \*\*Mode Intense :\*\* Sursouscription des threads (2x plus de threads que de cœurs) et blocs de mémoire agrandis pour saturer au maximum le système\[cite: 1].
+| Score | Rang | Usages recommandés |
+| :---: | :---: | :--- |
+| **< 500** | 🔴 *Faible* | Bureautique légère, navigation web, mail[cite: 1]. |
+| **500 - 1 499** | 🟠 *Correct* | Bureautique avancée, streaming, gaming léger[cite: 1]. |
+| **1 500 - 3 999** | 🔵 *Bon* | Machine polyvalente, gaming moyen/haut, multitâche confortable[cite: 1]. |
+| **4 000 - 7 999** | 🟢 *Très bon* | Gaming haute qualité, montage vidéo, développement lourd[cite: 1]. |
+| **8 000 +** | 🟣 *Excellent* | **PC Master Race** : Gaming Ultra, rendu 3D, 4K sans souci[cite: 1]. |
 
-\* \*\*Suivi en Direct :\*\* Affichage en temps réel des opérations CPU par seconde, du débit de la RAM en Mo/s, des FPS de la scène 3D et de la température du processeur\[cite: 1, 6].
+> 📊 **Historique intégré :** L'application sauvegarde automatiquement tes 200 derniers résultats et trace une courbe d'évolution pour suivre tes performances dans le temps ![cite: 3, 4]
 
-\* \*\*Système de Score et Historique :\*\* Calcul d'un score global pondéré avec attribution d'une catégorie de performance (\*Faible, Correct, Bon, Très bon, Excellent\*)\[cite: 1]. Sauvegarde locale automatique des 200 derniers tests dans un fichier JSON pour suivre l'évolution des scores\[cite: 3, 4].
+---
 
-\* \*\*Export des résultats :\*\* Copie textuelle du verdict dans le presse-papier ou capture d'écran graphique du panneau des scores au format PNG\[cite: 1, 6].
+## 🚀 Installation & Compilation
 
-
-
-\---
-
-
-
-\## 🛠️ Technologies utilisées
-
-
-
-\* \*\*Framework :\*\* .NET 8.0 (WPF)\[cite: 7]
-
-\* \*\*Langage :\*\* C# 12
-
-\* \*\*Dépendance système :\*\* `System.Management` (pour les requêtes WMI sur le matériel)\[cite: 7]
-
-\* \*\*Format de données :\*\* `System.Text.Json` (pour l'historique des scores)\[cite: 3]
-
-
-
-\---
-
-
-
-\## 📦 Comment compiler et lancer l'application
-
-
-
-\### Prérequis
-
-\* Un système d'exploitation Windows.
-
-\* Le SDK .NET 8.0 installé (si tu souhaites le recompiler toi-même).
-
-
-
-\### Option 1 : Générer un exécutable unique (Single File)
-
-Pour compiler l'application sous la forme d'un seul fichier `.exe` autonome (qui inclut le framework .NET pour fonctionner sur n'importe quel PC), ouvre un terminal dans le dossier racine et tape :
-
-
+### Option 1 : Compilation en un seul fichier (`.exe` autonome)
+Pour générer un exécutable unique qui contient déjà tout le framework .NET (pas besoin d'installer .NET sur le PC cible), lance cette commande dans ton terminal :
 
 ```bash
-
 dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=true /p:IncludeNativeLibrariesForSelfExtract=true
-
