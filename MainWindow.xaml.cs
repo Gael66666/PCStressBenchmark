@@ -33,6 +33,7 @@ public partial class MainWindow : Window
     // écrit et un seul lit, donc une désynchronisation momentanée est sans risque ici)
     private volatile bool _tempMonitoring = false;
     private double _currentTempC = -1; // -1 = indisponible
+    private readonly TemperatureReader _temperatureReader = new();
 
     // Dernier résultat (pour copier/exporter)
     private string _lastResultText = "";
@@ -42,6 +43,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Loaded += MainWindow_Loaded;
+        Closed += (_, _) => _temperatureReader.Dispose();
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -171,37 +173,27 @@ public partial class MainWindow : Window
         TxtScanStatus.Text = "Détecté";
         _detectedRamGb = result.ramGb;
         _detectedCpuName = result.cpuName;
+
+        // Pré-initialise les capteurs pour afficher la température avant le test
+        await Task.Run(() =>
+        {
+            _temperatureReader.Initialize();
+            _currentTempC = _temperatureReader.ReadCpuTemperatureCelsius();
+        });
+        TxtTemp.Text = FormatTemperature(_currentTempC);
     }
 
-    // Lecture de la température CPU via WMI (root\WMI, MSAcpi_ThermalZoneTemperature).
-    // Cette source n'est pas disponible sur toutes les machines (dépend du BIOS/pilotes) :
-    // en cas d'échec on affiche simplement "N/A" plutôt que de faire planter le test.
+    private static string FormatTemperature(double celsius) =>
+        celsius > 0 ? $"{celsius:F0} °C" : "N/A";
+
+    // Boucle de suivi température (LibreHardwareMonitor + secours WMI).
     private void TemperatureMonitorLoop()
     {
+        _temperatureReader.Initialize();
+
         while (_tempMonitoring)
         {
-            try
-            {
-                using var searcher = new ManagementObjectSearcher("root\\WMI", "SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature");
-                double? best = null;
-                foreach (var obj in searcher.Get())
-                {
-                    if (double.TryParse(obj["CurrentTemperature"]?.ToString(), out double raw))
-                    {
-                        double celsius = (raw / 10.0) - 273.15;
-                        if (celsius is > -50 and < 150) // filtre les valeurs aberrantes
-                        {
-                            best = best is null ? celsius : Math.Max(best.Value, celsius);
-                        }
-                    }
-                }
-                _currentTempC = best ?? -1;
-            }
-            catch
-            {
-                _currentTempC = -1;
-            }
-
+            _currentTempC = _temperatureReader.ReadCpuTemperatureCelsius();
             Thread.Sleep(1000);
         }
     }
@@ -385,7 +377,7 @@ public partial class MainWindow : Window
         TxtCpuRate.Text = $"{cpuOpsPerSecond:N0} ops/s";
         TxtRamRate.Text = $"{ramMbPerSecond:F0} Mo/s";
         TxtGpuRate.Text = $"{gpuFps:F0} fps";
-        TxtTemp.Text = _currentTempC > 0 ? $"{_currentTempC:F0} °C" : "N/A";
+        TxtTemp.Text = FormatTemperature(_currentTempC);
         TxtPercent.Text = $"{percent:F0}%";
 
         double trackWidth = ((Border)ProgressFill.Parent).ActualWidth;
