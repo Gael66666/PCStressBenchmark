@@ -1,0 +1,271 @@
+<Window x:Class="PCStressBenchmarkGUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PC Stress Benchmark" Height="700" Width="480"
+        MinHeight="500" MinWidth="480"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F1117"
+        FontFamily="Segoe UI"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+        <!-- Style bouton principal -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#7C5CFC"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#9075FD"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#3A3A45"/>
+                    <Setter Property="Foreground" Value="#8A8A94"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Style ComboBox durée / Radio -->
+        <Style x:Key="DurationRadio" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#C8C8D4"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,16,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="StatLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#8A8A94"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style x:Key="StatValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </Window.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- En-tête -->
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="PC Stress Benchmark" FontSize="26" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Test de charge CPU, RAM &amp; GPU avec score de performance" FontSize="13" Foreground="#8A8A94" Margin="0,4,0,0"/>
+            </StackPanel>
+            <Button x:Name="BtnHistory" Grid.Column="1" Content="Historique" Click="BtnHistory_Click"
+                    Background="#22242F" Foreground="#C8C8D4" FontSize="12" Padding="12,8" BorderThickness="0" Cursor="Hand" VerticalAlignment="Top">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- Configuration matérielle détectée -->
+        <Border Grid.Row="1" Background="#1A1C25" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Configuration détectée" Foreground="#8A8A94" FontSize="12" Grid.Column="0"/>
+                    <TextBlock x:Name="TxtScanStatus" Text="Analyse..." Foreground="#7C5CFC" FontSize="11" Grid.Column="1"/>
+                </Grid>
+                <StackPanel Margin="0,10,0,0">
+                    <TextBlock x:Name="TxtCpuName" Text="Processeur : —" Foreground="White" FontSize="13" Margin="0,0,0,4" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="TxtRamTotal" Text="Mémoire : —" Foreground="White" FontSize="13" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="TxtGpuName" Text="Carte graphique : —" Foreground="White" FontSize="13" TextWrapping="Wrap"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Sélecteur de mode (avec ajout du Mode NASA) -->
+        <Border Grid.Row="2" Background="#1A1C25" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Intensité" Foreground="#8A8A94" FontSize="12" Margin="0,0,0,10"/>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="RadioModeCalme" Content="Calme" GroupName="Mode" Style="{StaticResource DurationRadio}" Tag="calme" IsChecked="True" Checked="RadioMode_Checked"/>
+                    <RadioButton x:Name="RadioModeIntense" Content="Intense" GroupName="Mode" Style="{StaticResource DurationRadio}" Tag="intense" Checked="RadioMode_Checked"/>
+                    <RadioButton x:Name="RadioModeNasa" Content="🚀 NASA Mode" GroupName="Mode" Style="{StaticResource DurationRadio}" Tag="nasa" Checked="RadioMode_Checked" Foreground="#FF4C4C" FontWeight="Bold"/>
+                </StackPanel>
+                <TextBlock x:Name="TxtModeWarning" Text="" Foreground="#E0A04C" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Sélecteur de durée -->
+        <Border Grid.Row="3" Background="#1A1C25" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Durée du test" Foreground="#8A8A94" FontSize="12" Margin="0,0,0,10"/>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="RadioDuration15" Content="15 s" GroupName="Duration" Style="{StaticResource DurationRadio}" Tag="15"/>
+                    <RadioButton x:Name="RadioDuration30" Content="30 s" GroupName="Duration" Style="{StaticResource DurationRadio}" Tag="30"/>
+                    <RadioButton x:Name="RadioDuration60" Content="60 s" GroupName="Duration" Style="{StaticResource DurationRadio}" Tag="60" IsChecked="True"/>
+                    <RadioButton x:Name="RadioDuration120" Content="120 s" GroupName="Duration" Style="{StaticResource DurationRadio}" Tag="120"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Barre de progression -->
+        <Border Grid.Row="4" Background="#1A1C25" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="TxtStatus" Grid.Column="0" Text="Prêt à démarrer" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="TxtPercent" Grid.Column="1" Text="0%" Foreground="#7C5CFC" FontSize="14" FontWeight="Bold"/>
+                </Grid>
+                <Border Background="#2A2C38" CornerRadius="6" Height="12" Margin="0,10,0,0">
+                    <Border x:Name="ProgressFill" Background="#7C5CFC" CornerRadius="6" HorizontalAlignment="Left" Width="0"/>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Statistiques en direct -->
+        <Border Grid.Row="5" Background="#1A1C25" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
+                    <TextBlock Text="CŒURS UTILISÉS" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtCores" Text="—" Style="{StaticResource StatValue}"/>
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,14">
+                    <TextBlock Text="TEMPS ÉCOULÉ" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtElapsed" Text="0.0 s" Style="{StaticResource StatValue}"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
+                    <TextBlock Text="DÉBIT CPU" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtCpuRate" Text="0 ops/s" Style="{StaticResource StatValue}" FontSize="16"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,14">
+                    <TextBlock Text="DÉBIT RAM" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtRamRate" Text="0 Mo/s" Style="{StaticResource StatValue}" FontSize="16"/>
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="0">
+                    <TextBlock Text="GPU (IMAGES/S)" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtGpuRate" Text="0 fps" Style="{StaticResource StatValue}" FontSize="16"/>
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="1">
+                    <TextBlock Text="TEMPÉRATURE CPU" Style="{StaticResource StatLabel}"/>
+                    <TextBlock x:Name="TxtTemp" Text="N/A" Style="{StaticResource StatValue}" FontSize="16"/>
+                </StackPanel>
+
+                <!-- Aperçu visuel du test GPU (rendu 3D continu pendant le test) -->
+                <Border Grid.Row="3" Grid.ColumnSpan="2" Background="#0F1117" CornerRadius="8" Margin="0,14,0,0" Height="90">
+                    <Viewport3D x:Name="GpuViewport">
+                        <Viewport3D.Camera>
+                            <PerspectiveCamera Position="0,0,5" LookDirection="0,0,-1" UpDirection="0,1,0" FieldOfView="60"/>
+                        </Viewport3D.Camera>
+                        <ModelVisual3D>
+                            <ModelVisual3D.Content>
+                                <Model3DGroup>
+                                    <AmbientLight Color="#666666"/>
+                                    <DirectionalLight Color="#FFFFFF" Direction="-1,-1,-2"/>
+                                </Model3DGroup>
+                            </ModelVisual3D.Content>
+                        </ModelVisual3D>
+                    </Viewport3D>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Boutons principaux -->
+        <Grid Grid.Row="6" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BtnStart" Grid.Column="0" Content="Lancer le test" Style="{StaticResource PrimaryButton}" Click="BtnStart_Click" Margin="0,0,8,0" HorizontalAlignment="Stretch"/>
+            <Button x:Name="BtnStop" Grid.Column="1" Content="Arrêter" Click="BtnStop_Click" IsEnabled="False"
+                    Background="#3A3A45" Foreground="White" FontSize="16" FontWeight="SemiBold" Padding="18,12" BorderThickness="0" Cursor="Hand">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- Résultat final -->
+        <Border x:Name="ScorePanel" Grid.Row="7" Background="#1A1C25" CornerRadius="12" Padding="20" Visibility="Collapsed" VerticalAlignment="Top" Margin="0,0,0,20">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="SCORE FINAL" Foreground="#8A8A94" FontSize="13" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="TxtScore" Text="0" Foreground="White" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                <Border x:Name="TierBadge" Background="#7C5CFC" CornerRadius="20" Padding="14,6" Margin="0,10,0,0" HorizontalAlignment="Center">
+                    <TextBlock x:Name="TxtTier" Text="—" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
+                </Border>
+                <TextBlock x:Name="TxtVerdict" Text="" Foreground="#C8C8D4" FontSize="13" Margin="0,16,0,0" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="380"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,18,0,0" HorizontalAlignment="Center">
+                    <Button x:Name="BtnCopy" Content="📋 Copier le résultat" Click="BtnCopy_Click" Margin="0,0,8,0"
+                            Background="#2A2C38" Foreground="White" FontSize="12" Padding="12,8" BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="BtnExport" Content="🖼 Enregistrer capture" Click="BtnExport_Click"
+                            Background="#2A2C38" Foreground="White" FontSize="12" Padding="12,8" BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+    </ScrollViewer>
+</Window>
