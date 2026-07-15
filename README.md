@@ -17,7 +17,7 @@
 ## 📥 TÉLÉCHARGEMENT & DÉMARRAGE RAPIDE
 
 Tu veux juste tester ton PC sans t'embêter avec le code source ? 
-👉 **[Va directement dans la section RELEASES (à droite de la page ou en cliquant ici)](../../releases/latest)** et télécharge le fichier **`PCStressBenchmarkGUI.exe`**. 
+👉 **[Va directement dans la section RELEASES (à droite de la page ou en cliquant ici)](https://github.com/Gael66666/PCStressBenchmark/releases/latest)** et télécharge le fichier **`PCStressBenchmarkGUI.exe`**. 
 
 Il s'agit d'un exécutable portable et autonome (aucun besoin d'installer .NET ou quoi que ce soit sur ton PC) !
 
@@ -33,7 +33,7 @@ Il s'agit d'un exécutable portable et autonome (aucun besoin d'installer .NET o
 
 ## 📌 À propos du projet
 
-**PC Stress Benchmark** est une application lourde conçue avec **WPF** et **.NET 8.0**. Elle permet d'évaluer les performances réelles d'un ordinateur en appliquant une charge calculée sur les composants clés, tout en surveillant les métriques système en direct (température, débits, FPS).
+**PC Stress Benchmark** est une application lourde conçue avec **WPF** et **.NET 8.0**. Elle permet d'évaluer les performances réelles d'un ordinateur en appliquant une charge calculée sur les composants clés, tout en surveillant les métriques système en direct (température, débits, FPS). Grâce à son algorithme **adaptatif**, le test s'ajuste dynamiquement aux caractéristiques matérielles de n'importe quelle machine !
 
 > 💡 **Pourquoi l'utiliser ?**  
 > Idéal pour vérifier la stabilité d'un PC après un overclocking, tester l'efficacité d'un refroidissement, ou simplement comparer les performances de ta machine avec tes potes !
@@ -45,7 +45,7 @@ Il s'agit d'un exécutable portable et autonome (aucun besoin d'installer .NET o
 | Composant | Méthode de Test | Métrique en direct |
 | :--- | :--- | :--- |
 | 🧠 **Processeur (CPU)** | Calculs flottants intensifs & trigonométrie sur tous les cœurs logiques | `Opérations / seconde` |
-| 💾 **Mémoire (RAM)** | Allocation de blocs lourds avec stress du bus mémoire en lecture/écriture | `Débit en Mo/s` |
+| 💾 **Mémoire (RAM)** | Allocation dynamique et stress du bus mémoire avec contournement du cache (*Stride*) | `Débit en Mo/s` |
 | 🎮 **Graphismes (GPU)** | Rendu 3D continu d'animations géométriques en temps réel (*Viewport3D*) | `Images / seconde (FPS)` |
 | 🌡️ **Moniteur WMI** | Capteur de température intégré via les sondes ACPI de la carte mère | `Température en °C` |
 
@@ -53,10 +53,11 @@ Il s'agit d'un exécutable portable et autonome (aucun besoin d'installer .NET o
 
 ## ⚙️ Les Modes d'Intensité
 
-L'application propose deux modes de test adaptés à ta configuration :
+L'application propose trois modes de test s'adaptant dynamiquement au matériel détecté :
 
 * 🟢 **Mode Calme :** Charge standard pour un test de stabilité rapide (15s à 120s) sans bloquer le reste de ton système.
-* 🔴 **Mode Intense :** **Sursouscription des threads** (2x plus de threads que de cœurs physiques) et blocs RAM massifs. *Attention : Conçu pour faire transpirer les PC puissants ! Le bouton "Arrêter" reste fonctionnel à tout moment en cas de besoin.*
+* 🟠 **Mode Intense :** **Sursouscription des threads** ($2\times$ plus de threads que de cœurs physiques) et blocs RAM massifs. Conçu pour faire transpirer les PC puissants tout en gardant l'interface réactive.
+* 🔥 **Mode NASA (Nouveau !) :** **Le test destructeur ultime.** Sursouscription extrême ($4\times$ threads par cœur logique) et allocation adaptative ciblant jusqu'à **$75\,\%$ de la mémoire RAM totale disponible**. Le processeur est poussé à ses limites thermiques maximales et le bus mémoire est saturé. *(Attention : la souris et l'écran vont se figer pendant le test, c'est le signe d'une charge à $100\,\%$. Un bonus de score de $\times 1.5$ est accordé en cas de succès !)*
 
 ---
 
@@ -70,9 +71,10 @@ L'application propose deux modes de test adaptés à ta configuration :
 | **500 - 1 499** | 🟠 *Correct* | Bureautique avancée, streaming, gaming léger. |
 | **1 500 - 3 999** | 🔵 *Bon* | Machine polyvalente, gaming moyen/haut, multitâche confortable. |
 | **4 000 - 7 999** | 🟢 *Très bon* | Gaming haute qualité, montage vidéo, développement lourd. |
-| **8 000 +** | 🟣 *Excellent* | **PC Master Race** : Gaming Ultra, rendu 3D, 4K sans souci. |
+| **8 000 - 14 999** | 🟣 *Excellent* | **PC Master Race** : Gaming Ultra, rendu 3D, 4K sans souci. |
+| **15 000 +** | 🚀 *Niveau NASA* | **Monstre de puissance** : Stabilité thermique absolue démontrée face à la charge maximale. |
 
-> 📊 **Historique intégré :** L'application sauvegarde automatiquement tes 200 derniers résultats et trace une courbe d'évolution pour suivre tes performances dans le temps ! Tu peux aussi copier ton score en un clic ou exporter une capture d'écran `.png` !
+> 📊 **Historique intégré :** L'application sauvegarde automatiquement tes résultats et te permet de suivre tes performances dans le temps ! Tu peux aussi copier ton score en un clic ou exporter une capture d'écran `.png` !
 
 ---
 
