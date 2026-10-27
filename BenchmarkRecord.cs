@@ -1,3 +1,5 @@
+﻿using System;
+
 namespace PCStressBenchmarkGUI;
 
 public class BenchmarkRecord
@@ -12,4 +14,9 @@ public class BenchmarkRecord
     public double CpuOpsPerSecondPerCore { get; set; }
     public double RamMbPerSecond { get; set; }
     public double GpuFps { get; set; }
+
+    // Propriétés calculées pour l'affichage dans le XAML
+    public string DateLabel => Date.ToString("dd/MM/yyyy HH:mm");
+    public string SummaryLabel => $"{Mode} · {DurationSeconds}s · {CpuName}";
+    public string ScoreLabel => $"{Score:N0} pts";
 }

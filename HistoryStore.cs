@@ -1,4 +1,7 @@
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 namespace PCStressBenchmarkGUI;
@@ -6,9 +9,7 @@ namespace PCStressBenchmarkGUI;
 public static class HistoryStore
 {
     private static readonly string FolderPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "PCStressBenchmark");
-
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PCStressBenchmark");
     private static readonly string FilePath = Path.Combine(FolderPath, "history.json");
 
     public static List<BenchmarkRecord> Load()
@@ -19,12 +20,7 @@ public static class HistoryStore
             string json = File.ReadAllText(FilePath);
             return JsonSerializer.Deserialize<List<BenchmarkRecord>>(json) ?? new List<BenchmarkRecord>();
         }
-        catch
-        {
-            // Fichier corrompu ou illisible : on repart d'un historique vide
-            // plutôt que de faire planter l'application.
-            return new List<BenchmarkRecord>();
-        }
+        catch { return new List<BenchmarkRecord>(); }
     }
 
     public static void Add(BenchmarkRecord record)
@@ -34,20 +30,14 @@ public static class HistoryStore
             Directory.CreateDirectory(FolderPath);
             var records = Load();
             records.Add(record);
-
-            // On garde les 200 derniers résultats pour ne pas laisser grossir le fichier indéfiniment
-            if (records.Count > 200)
-            {
-                records = records.Skip(records.Count - 200).ToList();
-            }
-
-            string json = JsonSerializer.Serialize(records, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(FilePath, json);
+            if (records.Count > 200) records = records.Skip(records.Count - 200).ToList();
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(records, new JsonSerializerOptions { WriteIndented = true }));
         }
-        catch
-        {
-            // Sauvegarde impossible (permissions, disque plein...) : on n'interrompt
-            // pas l'utilisateur pour autant, le résultat reste visible à l'écran.
-        }
+        catch { }
+    }
+
+    public static void Clear()
+    {
+        try { if (File.Exists(FilePath)) File.Delete(FilePath); } catch { }
     }
 }

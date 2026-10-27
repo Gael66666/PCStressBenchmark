@@ -1,7 +1,3 @@
-using System.Windows;
-
+﻿using System.Windows;
 namespace PCStressBenchmarkGUI;
-
-public partial class App : Application
-{
-}
+public partial class App : Application { }
